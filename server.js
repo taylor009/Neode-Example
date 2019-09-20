@@ -106,3 +106,57 @@ app.get('/recommend/:genre/next', (req, res) => {
     });
 });
 
+app.get('/recommend/:genre/results', (req, res) => {
+    const query = `
+        MATCH (g:Genre) WHERE g.name = {genre}
+        MERGE (u:User {user_id: {user_id}})
+        WITH g, u
+        UNWIND keys({ratings}) AS movie
+        MATCH (m) WHERE id(m) = toInt(movie)
+        MERGE (u)-[r:RATED]->(m)
+        SET r.rating = {ratings}[movie]
+        WITH DISTINCT g, u
+        MATCH (u)-[r1:RATED]->()<-[r2:RATED]-(other)
+        WITH g, u, other, count(*) as in_common
+        ORDER BY in_common DESC LIMIT 10
+        MATCH (other)-[:RATED]->(recommendation)-[:IN_GENRE]->(g)
+        WHERE NOT (u)-[:RATED]->(recommendation)
+        RETURN g, recommendation, count(*) as occurrences
+        ORDER BY occurrences DESC LIMIT 1
+    `;
+
+    const params = {
+        genre: req.params.genre,
+        user_id: req.sessionID,
+        ratings: JSON.parse(req.query.ratings)
+    };
+
+    neode.cypher(query, params)
+    .then(results => {
+        const genre = neode.hydrateFirst(results, 'g');
+        const movie = neode.hydrateFirst(results, 'recommendation');
+
+        res.render('recommendation', {
+            title: "We recommend " + movie.get("title"),
+            genre,
+            movie
+        });
+    })
+    .catch(e => {
+        res.status(500).send(e.getMessage());
+    });
+});
+
+/**
+ * For examples of how to use Neode to quickly generate a REST API,
+ * checkout the route examples in ./routes.api.js
+ */
+app.use(require('./routes/api')(neode));
+
+/**
+ * Listen for requests on port 3000
+ */
+app.listen(3000, () =>
+{
+    console.log('app listening on http://localhost:3000'); // eslint-disable-line no-console
+});
