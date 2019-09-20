@@ -1,0 +1,27 @@
+{
+  "name": "neode-example",
+  "version": "1.0.0",
+  "main": "server.js",
+  "author": "Taylor Gagne",
+  "license": "MIT",
+  "scripts": {
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "neode",
+    "neo4j",
+    "graph",
+    "cypher",
+    "ogm"
+  ],
+  "dependencies": {
+    "express": "^4.17.1",
+    "express-session": "^1.16.2",
+    "jade": "^1.11.0",
+    "morgan": "^1.9.1",
+    "neode": "^0.3.3"
+  },
+  "devDependencies": {
+    "nodemon": "^1.19.2"
+  }
+}
